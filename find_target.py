@@ -5,6 +5,7 @@
 # import relevant modules and data
 #==============================================================================
 import re
+import os
 from csv import reader
 
 #start list of to store target occurences
@@ -20,14 +21,25 @@ for i in target_variables:
 #matching is case insensitive
 target_names=[t.lower() for t in target_names]
 
+# Read file indicating where "References" start
+ref_start = {}
+if os.path.exists("./output/ref_start.tsv"):
+    with open("./output/ref_start.tsv") as fin:
+        for doc in fin:
+            docid, sentid = doc.split("\t")
+            ref_start[docid.strip()] = sentid.strip()
+else:
+    print "No references file found! Continuing without reference filtering."
+
 #load and loop through data
 with open('./input/sentences_nlp352','r') as fid:
     for r in fid:
         #file is table delimited
         row=r.replace('\n','').split('\t')
-        #first three items are integers/strings        
+        #first three items are integers/strings
         docid=row[0]
         sentid=row[1]
+        if docid in ref_start and int(sentid) > int(ref_start[docid]) : continue
         tmp=row[2:]
 
         #the rest are comma-delimited lists
@@ -43,10 +55,10 @@ with open('./input/sentences_nlp352','r') as fid:
 
         #build list of target occurences for this document
         targets = []
-    
+
         #sentence string
         sent = ' '.join(words)
-    
+
         #loop through all the target names
         for name in target_names:
             #starting index of all matches for a target_name in the joined sentence
@@ -59,7 +71,7 @@ with open('./input/sentences_nlp352','r') as fid:
         	    indices = list(set(indices))
         	    #target_name spans its starting word index to the number of words in the phrase
         	    target_word_idx = [[i,i+len(name.split(' '))] for i in indices]
-        
+
         	    #initialize other data about a found target_name
         	    target_pose=[]
         	    target_path=[]
@@ -80,12 +92,12 @@ with open('./input/sentences_nlp352','r') as fid:
                          for span_idx in range(span[0], span[1]):
                              children = [j for j,i in enumerate(dep_parents) if i==span_idx+1]
                              target_children.append(children)
-                             
+
                              #gather adjectives of target word
                              for c in children:
                                  if poses[c]=='JJ':
                                      target_adj.append(words[c])
-                             
+
             		   #convert parent_ids to Pythonic ids
                          target_parent = [i-1 for i in target_parent]
 
@@ -95,4 +107,4 @@ with open('./input/sentences_nlp352','r') as fid:
 #write the output as tab-separated values
 with open('./output/output.tsv', 'w') as f:
     f.write('\n'.join(target_list))
-      
+
