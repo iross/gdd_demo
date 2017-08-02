@@ -13,6 +13,8 @@ import re
 import os
 from csv import reader
 
+CASE_SENSITIVE = False
+
 #start list of to store target occurences
 target_list=['\t'.join(['docid','sentid','target','start_idx','end_idx','adjectives','sentence'])]
 
@@ -28,10 +30,17 @@ if isinstance(target_names[0], list):
     extra_logic = True
     target_names_original = target_names
     target_names = [item for sub in target_names_original for item in sub]
-    target_names=[t.lower() for t in target_names]
+    if CASE_SENSITIVE:
+        target_names=[t for t in target_names]
+    else:
+        target_names=[t.lower() for t in target_names]
+
 else:
     extra_logic = False
-    target_names=[t.lower() for t in target_names]
+    if CASE_SENSITIVE:
+        target_names=[t for t in target_names]
+    else:
+        target_names=[t.lower() for t in target_names]
 
 
 ref_start = {}
@@ -44,6 +53,7 @@ else:
     print "No references file found! Continuing without reference filtering."
 
 doc_targets = {}
+
 
 #load and loop through data
 with open('./input/sentences_nlp352','r') as fid:
@@ -64,7 +74,10 @@ with open('./input/sentences_nlp352','r') as fid:
         #loop through all the target names
         for name in target_names:
             #starting index of all matches for a target_name in the joined sentence
-            matches=[(m.start(), m.end()) for m in re.finditer(name,sent.lower())]
+            if CASE_SENSITIVE:
+                matches=[(m.start(), m.end()) for m in re.finditer(name,sent)]
+            else:
+                matches=[(m.start(), m.end()) for m in re.finditer(name,sent.lower())]
 
             if matches:
                 for match in matches:
@@ -77,10 +90,14 @@ with open('./output/matching_documents.txt', 'w') as f:
     for doc, targets_found in doc_targets.iteritems():
         if extra_logic:
             hits = [False for i in range(len(target_names_original))]
-            for sub in range(len(target_names_original)):
-                for term in target_names_original[sub]:
-                    if term.lower() in targets_found:
-                        hits[sub] = True
+            for i, sub in enumerate(target_names_original):
+                for term in sub:
+                    if CASE_SENSITIVE:
+                        if term in targets_found:
+                            hits[i] = True
+                    else:
+                        if term.lower() in [term.lower() for term in targets_found]:
+                            hits[i] = True
         else:
             hits = [True]
 
