@@ -87,19 +87,26 @@ with open('./input/sentences_nlp352','r') as fid:
                         doc_targets[docid] = [sent[match[0]:match[1]]]
 
 with open('./output/matching_documents.txt', 'w') as f:
-    for doc, targets_found in doc_targets.iteritems():
-        if extra_logic:
-            hits = [False for i in range(len(target_names_original))]
-            for i, sub in enumerate(target_names_original):
-                for term in sub:
-                    if CASE_SENSITIVE:
-                        if term in targets_found:
-                            hits[i] = True
-                    else:
-                        if term.lower() in [term.lower() for term in targets_found]:
-                            hits[i] = True
-        else:
-            hits = [True]
+    with open('./output/docs_terms.txt', 'w') as fout:
+        for doc, targets_found in doc_targets.iteritems():
+            doc_terms = {}
+            if extra_logic:
+                hits = [False for i in range(len(target_names_original))]
+                for i, sub in enumerate(target_names_original):
+                    for term in sub:
+                        doc_terms[term] = 0
+                        if CASE_SENSITIVE:
+                            if term in targets_found:
+                                hits[i] = True
+                                doc_terms[term] = targets_found.count(term)
+                        else:
+                            if term.lower() in [iterm.lower() for iterm in targets_found]:
+                                hits[i] = True
+                                doc_terms[term] = [iterm.lower() for iterm in targets_found].count(term.lower())
+            else:
+                hits = [True]
 
-        if all(hits):
-            f.write("%s\t%s\n" % (doc, targets_found))
+            if all(hits):
+                f.write("%s\t%s\n" % (doc, targets_found))
+                for term, n_hits in doc_terms.items():
+                    fout.write("%s\t%s\t%s\n" % (doc, term, n_hits))
