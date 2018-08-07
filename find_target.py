@@ -7,14 +7,19 @@
 import re
 import os
 from csv import reader
-from var.target_variables import target_names, bad_words
 
-#start list of to store target occurences
-target_list = []
 
-def find_target():
+def find_target(target_names = None, bad_words = None):
+    #start list of to store target occurences
+    target_list = []
+
+    if target_names is None:
+        from var.target_variables import target_names
+    if bad_words is None:
+        from var.target_variables import bad_words
+
     #matching is case insensitive
-#    target_names=[t.lower() for t in target_names]
+    target_names=[t.lower() for t in target_names]
 
     # Read file indicating where "References" start
     ref_start = {}
